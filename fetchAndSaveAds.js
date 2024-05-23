@@ -73,9 +73,10 @@ const validCategories = [
 
 const fetchAndSaveAds = async () => {
   const url = "https://arbeidsplassen.nav.no/public-feed/api/v1/ads";
-  const publishedAfter = "1900-01-01"; // Fetch ads published on or after this date
+  const start = "2024-01-01";
+  const end = "2024-02-01";
   const params = {
-    published: `[${publishedAfter},*)`,
+    published: `[${start}, ${end})`,
     size: 100, // Adjust size as needed
     page: 0, // Start at the first page
   };
@@ -108,6 +109,7 @@ const fetchAndSaveAds = async () => {
             );
 
           if (isValidCategory) {
+            console.log(ad.uuid, ad.published, ad.title, ad.employer.name);
             const employerName =
               ad.employer && ad.employer.name
                 ? ad.employer.name.replace(/[\/:*?"<>|]/g, "")
@@ -133,13 +135,9 @@ const fetchAndSaveAds = async () => {
       }
     }
 
-    const statusFilePath = path.join(__dirname, "status.txt");
-    fs.writeFileSync(
-      statusFilePath,
-      `Last date fetched: ${new Date()}\nLast page fetched: ${lastPageFetched}`
-    );
-
     console.log("All ads have been fetched and saved to disk.");
+    const statusFilePath = path.join(__dirname, "ads", "status.txt");
+    fs.writeFileSync(statusFilePath, `Ads fetched until : ${end}`);
   } catch (error) {
     console.error("Error fetching ads:", error);
   }
