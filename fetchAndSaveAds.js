@@ -72,14 +72,10 @@ const validCategories = [
 ];
 
 const fetchAndSaveAds = async () => {
-  const url = "https://arbeidsplassen.nav.no/public-feed/api/v1/ads";
-  const start = "2024-01-01";
-  const end = "2024-02-01";
-  const params = {
-    published: `[${start}, ${end})`,
-    size: 100, // Adjust size as needed
-    page: 0, // Start at the first page
-  };
+  const baseURL = "https://arbeidsplassen.nav.no/public-feed/api/v1/ads";
+  // Check ads/status.txt for the last date fetched. This is the new start date.
+  const start = new Date("2024-01-01");
+  const end = new Date("2024-05-23");
   const headers = {
     Authorization:
       "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwdWJsaWMudG9rZW4udjFAbmF2Lm5vIiwiYXVkIjoiZmVlZC1hcGktdjEiLCJpc3MiOiJuYXYubm8iLCJpYXQiOjE1NTc0NzM0MjJ9.jNGlLUF9HxoHo5JrQNMkweLj_91bgk97ZebLdfx3_UQ",
@@ -88,56 +84,81 @@ const fetchAndSaveAds = async () => {
   console.time("fetchAndSaveAds");
 
   try {
-    let morePages = true;
-    let lastPageFetched = 0;
     let totalAdsFetched = 0;
+    let currentDate = new Date(start);
+    while (currentDate < end) {
+      let dayLater = new Date(currentDate);
+      dayLater.setDate(dayLater.getDate() + 1);
+      const dateRange = `[${currentDate.toISOString().split("T")[0]}, ${
+        dayLater.toISOString().split("T")[0]
+      })`;
 
-    while (morePages) {
-      const response = await axios.get(url, { params, headers });
-      const data = response.data;
+      let adsPrDay = 0;
+      let morePages = true;
+      let page = 0;
 
-      if (data.content && data.content.length > 0) {
-        data.content.forEach((ad) => {
-          const isValidCategory =
-            ad.occupationCategories &&
-            ad.occupationCategories.some((category) =>
-              validCategories.some(
-                (validCategory) =>
-                  validCategory.level1 === category.level1 &&
-                  validCategory.level2 === category.level2
-              )
-            );
+      while (morePages) {
+        const params = {
+          published: dateRange,
+          size: 100,
+          page: page,
+        };
 
-          if (isValidCategory) {
-            console.log(ad.uuid, ad.published, ad.title, ad.employer.name);
-            const employerName =
-              ad.employer && ad.employer.name
-                ? ad.employer.name.replace(/[\/:*?"<>|]/g, "")
-                : "unknown";
-            const dirPath = path.join(__dirname, "ads", employerName);
+        const response = await axios.get(baseURL, { params, headers });
+        const data = response.data;
 
-            if (!fs.existsSync(dirPath)) {
-              fs.mkdirSync(dirPath, { recursive: true });
+        if (data.content && data.content.length > 0) {
+          data.content.forEach((ad) => {
+            const isValidCategory =
+              ad.occupationCategories &&
+              ad.occupationCategories.some((category) =>
+                validCategories.some(
+                  (validCategory) =>
+                    validCategory.level1 === category.level1 &&
+                    validCategory.level2 === category.level2
+                )
+              );
+
+            if (isValidCategory) {
+              const employerName =
+                ad.employer && ad.employer.name
+                  ? ad.employer.name.replace(/[\/:*?"<>|]/g, "")
+                  : "unknown";
+              const dirPath = path.join(__dirname, "ads", employerName);
+              if (!fs.existsSync(dirPath)) {
+                fs.mkdirSync(dirPath, { recursive: true });
+              }
+              const filePath = path.join(dirPath, `${ad.uuid}.json`);
+              fs.writeFileSync(filePath, JSON.stringify(ad, null, 2));
+              adsPrDay++;
+              totalAdsFetched++;
             }
+          });
 
-            const filePath = path.join(dirPath, `${ad.uuid}.json`);
-            fs.writeFileSync(filePath, JSON.stringify(ad, null, 2));
-            totalAdsFetched++;
-          }
-        });
-
-        console.log(`Total ads fetched so far: ${totalAdsFetched}`);
-
-        lastPageFetched = params.page;
-        params.page += 1; // Move to the next page
-      } else {
-        morePages = false; // No more pages to fetch
+          page++;
+        } else {
+          morePages = false;
+          console.log(
+            `${adsPrDay} ads fetched between ${
+              currentDate.toISOString().split("T")[0]
+            } and ${dayLater.toISOString().split("T")[0]}`
+          );
+        }
       }
+
+      currentDate = dayLater;
     }
 
-    console.log("All ads have been fetched and saved to disk.");
+    console.log(
+      `${totalAdsFetched} have been fetched between ${
+        start.toISOString().split("T")[0]
+      } and ${end.toISOString().split("T")[0]}`
+    );
     const statusFilePath = path.join(__dirname, "ads", "status.txt");
-    fs.writeFileSync(statusFilePath, `Ads fetched until : ${end}`);
+    fs.writeFileSync(
+      statusFilePath,
+      `Ads fetched until : ${end.toISOString().split("T")[0]}`
+    );
   } catch (error) {
     console.error("Error fetching ads:", error);
   }
@@ -145,7 +166,6 @@ const fetchAndSaveAds = async () => {
   console.timeEnd("fetchAndSaveAds");
 };
 
-// Ensure the ads directory exists
 if (!fs.existsSync(path.join(__dirname, "ads"))) {
   fs.mkdirSync(path.join(__dirname, "ads"));
 }
