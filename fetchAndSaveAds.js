@@ -2,7 +2,9 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
-// Define valid categories
+// Check ads/status.txt for the last date fetched. This is the new start date.
+const start = new Date("2024-05-23");
+
 const validCategories = [
   {
     level1: "Kontor og økonomi",
@@ -73,9 +75,7 @@ const validCategories = [
 
 const fetchAndSaveAds = async () => {
   const baseURL = "https://arbeidsplassen.nav.no/public-feed/api/v1/ads";
-  // Check ads/status.txt for the last date fetched. This is the new start date.
-  const start = new Date("2024-01-01");
-  const end = new Date("2024-05-23");
+  const end = new Date(new Date().toISOString().split("T")[0]);
   const headers = {
     Authorization:
       "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwdWJsaWMudG9rZW4udjFAbmF2Lm5vIiwiYXVkIjoiZmVlZC1hcGktdjEiLCJpc3MiOiJuYXYubm8iLCJpYXQiOjE1NTc0NzM0MjJ9.jNGlLUF9HxoHo5JrQNMkweLj_91bgk97ZebLdfx3_UQ",
