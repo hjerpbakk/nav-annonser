@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 // Check ads/status.txt for the last date fetched. This is the new start date.
-const start = new Date("2024-05-23");
+const start = new Date("2024-05-27");
 
 const validCategories = [
   {
@@ -154,6 +154,7 @@ const fetchAndSaveAds = async () => {
         start.toISOString().split("T")[0]
       } and ${end.toISOString().split("T")[0]}`
     );
+    end.setDate(end.getDate() - 1);
     const statusFilePath = path.join(__dirname, "ads", "status.txt");
     fs.writeFileSync(
       statusFilePath,
