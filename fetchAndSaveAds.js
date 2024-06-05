@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 // Check ads/status.txt for the last date fetched. This is the new start date.
-const start = new Date("2024-05-27");
+const start = new Date("2024-06-04");
 
 const validCategories = [
   {
