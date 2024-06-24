@@ -122,7 +122,7 @@ const fetchAndSaveAds = async () => {
             if (isValidCategory) {
               const employerName =
                 ad.employer && ad.employer.name
-                  ? ad.employer.name.replace(/[\/:*?"<>|]/g, "")
+                  ? ad.employer.name.replace(/[\/:*?"<>|]|\n/g, "")
                   : "unknown";
               const dirPath = path.join(__dirname, "ads", employerName);
               if (!fs.existsSync(dirPath)) {
