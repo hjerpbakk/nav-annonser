@@ -24,6 +24,8 @@ function checkSentence(sentence){
 
 
 const removePersonalInfo  = async () => {
+    // Diagnostics
+    console.time("removePersonalInfo");
     console.log("Started cleaning ads.");
 
     let cleanedAds = 0;
@@ -31,18 +33,21 @@ const removePersonalInfo  = async () => {
     let cleanedEmployerDescription = 0;
 
     try {
-        const adsDir = path.join(__dirname, "ads");
-        const employerNames = fs.readdirSync(adsDir);
+        const adsPath = path.join(__dirname, "ads");
+        const employerNames = fs.readdirSync(adsPath);
+
+        // Need to remove status.txt
+        const statusIndex = employerNames.indexOf("status.txt");
+        employerNames.splice(statusIndex, 1);
 
         // Loop over all employers
-        //for (let i = 0; i < employerNames.length; i++){
-        for (let i = 0; i < 10; i++){
-            const filename = fs.readdirSync(path.join(adsDir, employerNames[i]));
+        for (let i = 0; i < employerNames.length; i++){
+            const filename = fs.readdirSync(path.join(adsPath, employerNames[i]));
             
             // Loop over all ad files
             for (let j = 0; j < filename.length; j++){
 
-                let ad = JSON.parse(fs.readFileSync(path.join(adsDir, employerNames[i], filename[j]), (err, data) => {
+                let ad = JSON.parse(fs.readFileSync(path.join(adsPath, employerNames[i], filename[j]), (err, data) => {
                     if (err) throw err;
                     return(data);
                 })); 
@@ -63,21 +68,24 @@ const removePersonalInfo  = async () => {
                 ad['description'] = sentences.join();
 
 
-                // Remove personal information from employer description
-                let employerSentences = ad['employer']['description'].split(/\./);
-                for (let k = 0; k < employerSentences.length; k++){
+                // Remove personal information from employer description if there is any
+                if (ad['employer']['description']) {
+                    let employerSentences = ad['employer']['description'].split(/\./);
+
+                    for (let k = 0; k < employerSentences.length; k++){
                     
-                    personalInformation = checkSentence(employerSentences[k]);
-
-                    if (personalInformation) {
-                        employerSentences[k] = "---PERSONOPPLYSNING---";
-                        cleanedEmployerDescription++;
+                        personalInformation = checkSentence(employerSentences[k]);
+    
+                        if (personalInformation) {
+                            employerSentences[k] = "---PERSONOPPLYSNING---";
+                            cleanedEmployerDescription++;
+                        }
                     }
+                    // Overwrite employer description.
+                    ad['employer']['description'] = employerSentences.join(".");
                 }
-                // Overwrite employer description.
-                ad['employer']['description'] = employerSentences.join(".");
-
-
+                
+                
                 // Write cleaned ad to file
                 const dirPath = path.join(__dirname, "cleanAds", employerNames[i]);
                 if (!fs.existsSync(dirPath)) {
@@ -92,13 +100,32 @@ const removePersonalInfo  = async () => {
             cleanedEmployers++;
         }
 
+        // Add marker in status.txt
+        const adStatusPath = path.join(__dirname, "ads", "status.txt");
+        const cleanAdStatusPath = path.join(__dirname, "cleanAds", "status.txt");
+
+        const statusFile = fs.readFileSync(adStatusPath);
+        const newStatus = `${statusFile}\nAll ads cleaned.`;
+
+        fs.writeFileSync(cleanAdStatusPath, newStatus);
+
+        // Remove raw ads
+        fs.rm(adsPath, {recursive : true}, err => {
+            if (err){
+                throw err;
+            }
+
+            console.log("Raw ads deleted.")
+        });
+
+        // Diagnostics
         console.log("Cleaned", cleanedAds, "ads");
         console.log("from", cleanedEmployers, "employers.");
         console.log("Cleaned employer descriptions: ", cleanedEmployerDescription);
     } catch (error) {
-        console.log("Error in anonymisation: ", error)
+        console.log("Error in anonymisation: ", error);
     }
-
+    console.timeEnd("removePersonalInfo");
 };
 
 if (!fs.existsSync(path.join(__dirname, "ads"))) {
