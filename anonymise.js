@@ -64,7 +64,7 @@ const removePersonalInfo  = async () => {
 
 
                 // Remove personal information from employer description
-                let employerSentences = ad['employer']['description'];
+                let employerSentences = ad['employer']['description'].split(/\./);
                 for (let k = 0; k < employerSentences.length; k++){
                     
                     personalInformation = checkSentence(employerSentences[k]);
@@ -75,7 +75,7 @@ const removePersonalInfo  = async () => {
                     }
                 }
                 // Overwrite employer description.
-                ad['employer']['description'] = employerSentences.join();
+                ad['employer']['description'] = employerSentences.join(".");
 
 
                 // Write cleaned ad to file
