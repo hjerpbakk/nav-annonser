@@ -16,13 +16,18 @@ Så kan skriptet kjøres vha:
 npm start
 ```
 
-For å anonymisere annonsene kjør: 
+Skriptene kan også kjøres separat med:
 
 ```bash
-npm run anonymise
+npm run fetch           // Hent annonser fra API
+npm run anonymise       // Rens annonsene
 ```
 
 ## Feilsøking
+
+### Ingen (eller mange) nye annonser
+
+Sjekk at dato er satt riktig i `fetchAndSave.js` i forhold til i `ads/status.txt` (eller `cleanAds/status.txt`). 
 
 ### Skriptet feiler med 401
 
