@@ -16,6 +16,12 @@ Så kan skriptet kjøres vha:
 npm start
 ```
 
+For å anonymisere annonsene kjør: 
+
+```bash
+npm run anonymise
+```
+
 ## Feilsøking
 
 ### Skriptet feiler med 401
