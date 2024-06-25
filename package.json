@@ -4,7 +4,8 @@
   "description": "Enkelt skript som henter og anonymiserer annonser publisert hos NAV",
   "main": "fetchAndSaveAds.js",
   "scripts": {
-    "start": "node fetchAndSaveAds.js",
+    "start": "node fetchAndSaveAds.js && node anonymise.js",
+    "fetch": "node fetchAndSaveAds.js",
     "anonymise": "node anonymise.js"
   },
   "repository": {
