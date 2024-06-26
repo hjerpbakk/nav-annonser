@@ -4,14 +4,14 @@ const path = require("path");
 function checkSentence(sentence){
 
      // Check for contact-information strings
-     const contactCheck = /kontaktinf/i.test(sentence);
+     const contactCheck = /spørsmål|kontakt|contact/i.test(sentence);
 
      // Check for email-address
-     const emailCheck = /[a-å0-9._%+-]+@[a-å0-9.-]+\.[a-å]{2,}/i.test(sentence);
+     const emailCheck = /[a-å0-9._%+-]+(@|&#64;)[a-å0-9.-]+\.[a-å]{2,}/i.test(sentence);
 
      // Check for (Norwegian) phone number
      const nrCheck = /([0-9]{3}\s[0-9]{2}\s[0-9]{3}|[0-9]{2}\s[0-9]{2}\s[0-9]{2}\s[0-9]{2}|[0-9]{8})/i.test(sentence);
-     const phoneCheck = /tlf|telefon/i.test(sentence);
+     const phoneCheck = /tlf|telefon|tel/i.test(sentence);
 
      // TODO: Check for names
 
@@ -53,19 +53,25 @@ const removePersonalInfo  = async () => {
                 })); 
                 
                 // Remove personal information from ad description
-                let sentences = ad['description'].split(/(\.|<br|<h[1-6])[\s/>]/);
+                let sentences = ad['description'].split(/(\.|<p|<h[1-6]|<br|<li)(\s| \/>| >|>)/);
                 for (let k = 0; k < sentences.length; k++){
 
                     personalInformation = checkSentence(sentences[k]);
 
                     if (personalInformation) {
                         // Remove sentence with personal information
-                        //sentences.splice(k,1);
                         sentences[k] = "---PERSONOPPLYSNING---";
                     }
                 }
+                
+                if (sentences.join() == "---PERSONOPPLYSNING---"){
+                    // Diagnostic
+                    console.log(ad['description']);
+                    exit();
+                }
+
                 // Overwrite ad description
-                ad['description'] = sentences.join();
+                ad['description'] = sentences.join(". ");
 
 
                 // Remove personal information from employer description if there is any
@@ -85,13 +91,13 @@ const removePersonalInfo  = async () => {
                     ad['employer']['description'] = employerSentences.join(".");
                 }
                 
-                
+
                 // Write cleaned ad to file
                 const dirPath = path.join(__dirname, "cleanAds", employerNames[i]);
                 if (!fs.existsSync(dirPath)) {
                     fs.mkdirSync(dirPath, { recursive: true });
                 }
-                const filePath = path.join(dirPath, `${filename[j]}.json`);
+                const filePath = path.join(dirPath, `${filename[j]}`);
                 fs.writeFileSync(filePath, JSON.stringify(ad, null, 2));
 
                 cleanedAds++;
@@ -109,6 +115,7 @@ const removePersonalInfo  = async () => {
 
         fs.writeFileSync(cleanAdStatusPath, newStatus);
 
+        /*
         // Remove raw ads
         fs.rm(adsPath, {recursive : true}, err => {
             if (err){
@@ -117,6 +124,7 @@ const removePersonalInfo  = async () => {
 
             console.log("Raw ads deleted.")
         });
+        */
 
         // Diagnostics
         console.log("Cleaned", cleanedAds, "ads");
