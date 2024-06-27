@@ -1,9 +1,9 @@
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
+const config = require("./config");
 
-// Check ads/status.txt for the last date fetched. This is the new start date.
-const start = new Date("2024-06-11");
+const start = config.startDate;
 
 const validCategories = [
   {
