@@ -1,23 +1,66 @@
 const fs = require("fs");
 const path = require("path");
+const readline = require("readline");
 
-function checkSentence(sentence){
+// Diagnostics  
+let nameCounter = 0;
+/*
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+*/
 
-     // Check for contact-information strings
-     const contactCheck = /spørsmål|kontakt|contact/i.test(sentence);
+function manualCheck(phrase, sentence){
+    // Function for checking whether 'phrase' needs to be removed manually
 
-     // Check for email-address
-     const emailCheck = /[a-å0-9._%+-]+(@|&#64;)[a-å0-9.-]+\.[a-å]{2,}/i.test(sentence);
+    console.log("Context:", sentence);
+    console.log("Match:", phrase);
 
-     // Check for (Norwegian) phone number
-     const nrCheck = /([0-9]{3}\s[0-9]{2}\s[0-9]{3}|[0-9]{2}\s[0-9]{2}\s[0-9]{2}\s[0-9]{2}|[0-9]{8})/i.test(sentence);
-     const phoneCheck = /tlf|telefon|tel/i.test(sentence);
+    /*
+    return new Promise((resolve) => {
+        rl.question('>', (answer) => {
+            resolve(answer)
+        });
+    });
+    */
 
-     // TODO: Check for names
+    return false
+}
 
-     if (contactCheck || emailCheck || nrCheck || phoneCheck) {
+async function checkSentence(sentence){
+
+    // Check for contact-information strings
+    const contactCheck = /spørsmål|kontakt|contact/i.test(sentence);
+
+    // Check for email-address
+    const emailCheck = /[a-å0-9._%+-]+(@|&#64;)[a-å0-9.-]+\.[a-å]{2,}/i.test(sentence);
+
+    // Check for (Norwegian) phone number
+    const nrCheck = /([0-9]{3}\s[0-9]{2}\s[0-9]{3}|[0-9]{2}\s[0-9]{2}\s[0-9]{2}\s[0-9]{2}|[0-9]{8})/i.test(sentence);
+    const phoneCheck = /tlf|telefon|tel/i.test(sentence);
+
+    // Check for names
+    const nameRegex = /\b[A-ZÆØÅ][a-zæøå]+ [A-ZÆØÅ][a-zæøå]+\b/g;
+    const nameCheck = nameRegex.test(sentence);
+
+
+    if (contactCheck || emailCheck || nrCheck || phoneCheck) {
         return true;
-     }
+    }
+
+    if (nameCheck) {
+        const matches = sentence.match(nameRegex);
+        let manCheck;
+        
+        for (let l = 0; l < matches.length; l++){
+            //manCheck = await manualCheck(matches[l], sentence);
+        }
+
+
+    }
+        
+    nameCounter += Number(nameCheck); 
 
     return false;
 }
@@ -51,9 +94,9 @@ const removePersonalInfo  = async () => {
                     if (err) throw err;
                     return(data);
                 })); 
-                
+
                 // Remove personal information from ad description
-                let sentences = ad['description'].split(/(\.|<p|<h[1-6]|<br|<li)(\s| \/>| >|>)/);
+                let sentences = ad['description'].split(/((?<![A-ZÆØÅ])\.|<p|<h[1-6]|<br|<li)(\s| \/>| >|>)/);
                 for (let k = 0; k < sentences.length; k++){
 
                     personalInformation = checkSentence(sentences[k]);
@@ -65,18 +108,18 @@ const removePersonalInfo  = async () => {
                 }
                 
                 if (sentences.join() == "---PERSONOPPLYSNING---"){
-                    // Diagnostic
+                   // Diagnostic
                     console.log(ad['description']);
                     exit();
                 }
 
                 // Overwrite ad description
-                ad['description'] = sentences.join(". ");
+                ad['description'] = sentences.join("");
 
 
                 // Remove personal information from employer description if there is any
                 if (ad['employer']['description']) {
-                    let employerSentences = ad['employer']['description'].split(/\./);
+                    let employerSentences = ad['employer']['description'].split(/(?<![A-ZÆØÅ])\./);
 
                     for (let k = 0; k < employerSentences.length; k++){
                     
@@ -130,6 +173,7 @@ const removePersonalInfo  = async () => {
         console.log("Cleaned", cleanedAds, "ads");
         console.log("from", cleanedEmployers, "employers.");
         console.log("Cleaned employer descriptions: ", cleanedEmployerDescription);
+        console.log("Names found: ", nameCounter);
     } catch (error) {
         console.log("Error in anonymisation: ", error);
     }
